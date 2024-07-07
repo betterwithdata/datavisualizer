@@ -1,0 +1,111 @@
+[build-system]
+requires = [
+    "hatchling",
+    "jupyterlab==3.*",
+    "numpy>=1.21.0",
+    "pandas>=1.3.0",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "betterwithdata-viz"
+description = "jupyter notebook widget with a scatter plot and an interactive lens to enable interactive sonification "
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+authors = [
+    { name = "Alexander Rind" },
+    { name = "Kajetan Enge" },
+    { name = "SoniVis team" },
+]
+keywords = [
+    "IPython",
+    "Jupyter",
+    "Widgets",
+]
+classifiers = [
+    "Framework :: Jupyter",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.10",
+]
+dependencies = [
+    "ipywidgets>=7.0.0",
+    "numpy>=1.21.0",
+    "pandas>=1.3.0",
+]
+version = "0.1.8"
+
+[project.optional-dependencies]
+docs = [
+    "jupyter_sphinx",
+    "nbsphinx",
+    "nbsphinx-link",
+    "pypandoc",
+    "pytest_check_links",
+    "recommonmark",
+    "sphinx>=1.5",
+    "sphinx_rtd_theme",
+]
+examples = [
+    "sc3nb",
+]
+test = [
+    "nbval",
+    "pytest-cov",
+    "pytest>=4.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/fhstp/betterwithdata-viz"
+
+[tool.hatch.build.targets.wheel.shared-data]
+"betterwithdata_viz/nbextension" = "share/jupyter/nbextensions/betterwithdata_viz"
+"betterwithdata_viz/labextension" = "share/jupyter/labextensions/betterwithdata-viz"
+"./install.json" = "share/jupyter/labextensions/betterwithdata-viz/install.json"
+"./betterwithdata_viz.json" = "etc/jupyter/nbconfig/notebook.d/betterwithdata_viz.json"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    ".github",
+]
+
+[tool.hatch.build.hooks.jupyter-builder]
+ensured-targets = [
+    "betterwithdata_viz\\nbextension\\index.js",
+    "betterwithdata_viz\\labextension\\package.json",
+]
+skip-if-exists = [
+    "betterwithdata_viz\\nbextension\\index.js",
+    "betterwithdata_viz\\labextension\\package.json",
+]
+dependencies = [
+    "hatch-jupyter-builder>=0.8.3",
+]
+build-function = "hatch_jupyter_builder.npm_builder"
+
+[tool.hatch.build.hooks.jupyter-builder.build-kwargs]
+path = "."
+build_cmd = "build:prod"
+
+[tool.tbump]
+field = [
+    { name = "channel", default = "" },
+    { name = "release", default = "" },
+]
+
+[tool.tbump.version]
+current = "0.1.8"
+regex = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)((?P<channel>a|b|rc|.dev)(?P<release>\\d+))?"
+
+[tool.tbump.git]
+message_template = "Bump to {new_version}"
+tag_template = "v{new_version}"
+
+[[tool.tbump.file]]
+src = "pyproject.toml"
+version_template = "version = \"{major}.{minor}.{patch}{channel}{release}\""

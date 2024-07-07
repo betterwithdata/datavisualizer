@@ -1,0 +1,2 @@
+[run]
+omit = betterwithdata_viz/tests/*
