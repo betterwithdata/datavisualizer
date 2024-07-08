@@ -1,19 +1,72 @@
 const path = require('path');
+const SveltePreprocess = require('svelte-preprocess');
 const version = require('./package.json').version;
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');  // Add this line
 
 // Custom webpack rules
 const rules = [
-  { test: /\.ts$/, loader: 'ts-loader' },
-  { test: /\.js$/, loader: 'source-map-loader' },
-  { test: /\.css$/, use: ['style-loader', 'css-loader']}
+  { test: /\.ts$/, loader: 'ts-loader',
+    options: {
+      configFile: 'tsconfig.json'
+    }
+  },
+  { test: /\.js$/, loader: 'source-map-loader' , exclude: /node_modules/},
+  { test: /\.css$/, use: ['style-loader', 'css-loader']},
+  {
+    test: /\.svelte$/,
+    loader: 'svelte-loader',
+    options: {
+      preprocess: SveltePreprocess({
+        sourceMap: true,
+        postcss: true,
+        plugins: [
+          require('tailwindcss'),
+          require('autoprefixer'),
+          require('postcss-nesting'),
+        ],
+      }),
+      dev: true,
+    },
+  },
+  {
+    test: /\.m?js/,
+    resolve: {
+      fullySpecified: false,
+    },
+  },
 ];
+const commonPlugins = [
+  new CopyPlugin({
+    patterns: [
+      { 
+        from: path.resolve(__dirname, 'src/toolbar/'),
+        to: path.resolve(__dirname, 'lib/toolbar'),
+        noErrorOnMissing: true,  
+        globOptions: {
+          ignore: ['**/*.js'],  // Don't copy TypeScript and JavaScript files
+        },
+      },
+    ],
+  }),
+];
+
+
+const optimization = (mode) => {
+  return {
+    minimize: mode === 'production',
+    minimizer: [new CssMinimizerPlugin()],
+  };
+};
 
 // Packages that shouldn't be bundled but loaded at runtime
 const externals = ['@jupyter-widgets/base'];
 
 const resolve = {
   // Add '.ts' and '.tsx' as resolvable extensions.
-  extensions: [".webpack.js", ".web.js", ".ts", ".js"]
+  extensions: ['.webpack.js', '.web.js', '.ts', '.js', '.svelte'],
+  mainFields: ['svelte', 'browser', 'module', 'main'],
+  modules: [path.resolve(__dirname, 'src'), 'node_modules']
 };
 
 module.exports = [
@@ -64,6 +117,7 @@ module.exports = [
     },
     externals,
     resolve,
+    plugins: commonPlugins,
   },
 
 
@@ -86,6 +140,27 @@ module.exports = [
     devtool: 'source-map',
     externals,
     resolve,
-  }
+  },
+  /**
+   * Lab extension
+   *
+   * This builds the lib/ folder with the JupyterLab extension.
+   */
+  {
+    entry: './src/plugin.ts',
+    output: {
+      filename: 'index.js',
+      path: path.resolve(__dirname, 'lib'),
+      libraryTarget: 'amd',
+      publicPath: '',
+    },
+    module: {
+      rules: rules
+    },
+    devtool: 'source-map',
+    externals,
+    resolve,
+    plugins: commonPlugins,
+  },
 
 ];
